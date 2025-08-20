@@ -1,0 +1,88 @@
+import androidx.build.AndroidXComposePlugin
+import androidx.build.LibraryType
+
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.library")
+    id("AndroidXComposePlugin")
+    id("kotlinx-atomicfu")
+}
+
+// 用于应用和配置 Kotlin Gradle插件
+AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
+
+if(!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
+    dependencies {
+        /*
+         * When updating dependencies, make sure to make the an an analogous update in the
+         * corresponding block below
+         */
+
+        implementation(libs.kotlinStdlibCommon)
+
+        testImplementation(libs.testRules)
+        testImplementation(libs.testRunner)
+        testImplementation(libs.kotlinTestJunit)
+        testImplementation(libs.junit)
+        testImplementation(libs.truth)
+
+        androidTestImplementation(libs.testRules)
+        androidTestImplementation(libs.testRunner)
+        androidTestImplementation(libs.espressoCore)
+        androidTestImplementation(libs.junit)
+        androidTestImplementation(libs.truth)
+    }
+}
+
+if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
+    androidXComposeMultiplatform {
+        android()
+        darwin()
+        ohos()
+    }
+
+    kotlin {
+        sourceSets {
+            commonMain.dependencies {
+                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.atomicFu)
+            }
+            androidMain {
+                dependencies {
+                    implementation(libs.kotlinStdlib)
+                    implementation(libs.kotlinCoroutinesAndroid)
+                }
+            }
+            ohosArm64Main {
+                dependsOn(commonMain)
+            }
+            darwinMain {
+                dependsOn(commonMain)
+            }
+            uikitMain {
+                dependsOn(commonMain)
+            }
+        }
+    }
+    dependencies {
+        implementation(libs.kotlinStdlib)
+    }
+}
+
+
+androidx {
+    name = "Compose Common"
+    type = LibraryType.PUBLISHED_LIBRARY
+    inceptionYear = "2025"
+    description = "Compose Common"
+    legacyDisableKotlinStrictApiMode = true
+}
+
+androidxCompose {
+    composeCompilerPluginEnabled = false
+}
+
+android {
+    namespace "androidx.compose.common"
+}

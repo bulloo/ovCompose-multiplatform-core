@@ -84,6 +84,9 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 implementation(libs.kotlinStdlibCommon)
 
                 api(project(":compose:ui:ui-unit"))
+                // shiqi region
+                api(project(":compose:common"))
+                // end region
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
                 implementation(project(":compose:ui:ui-geometry"))
