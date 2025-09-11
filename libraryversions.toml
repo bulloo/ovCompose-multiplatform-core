@@ -20,7 +20,7 @@ CAMERA_TESTING = "1.0.0-alpha01"
 CARDVIEW = "1.1.0-alpha01"
 CAR_APP = "1.7.0-alpha01"
 COLLECTION = "1.4.0"
-COMPOSE = "1.6.1-KBA-002"
+COMPOSE = "1.6.1-OHOSDEV-002"
 COMPOSE_COMPILER = "1.5.4"
 COMPOSE_MATERIAL3 = "1.2.0-alpha11"
 COMPOSE_MATERIAL3_ADAPTIVE = "1.0.0-alpha01"
@@ -171,6 +171,7 @@ WORK = "2.10.0-alpha01"
 
 [groups]
 ACTIVITY = { group = "androidx.activity", atomicGroupVersion = "versions.ACTIVITY" }
+COMMON = { group = "org.jetbrains.compose.common", atomicGroupVersion = "versions.COMPOSE", overrideInclude = [":compose:common"]}
 ANNOTATION = { group = "org.jetbrains.compose.annotation-internal", atomicGroupVersion = "versions.COMPOSE", overrideInclude = [ ":annotation:annotation" ] }
 APPACTIONS_BUILTINTYPES = { group = "androidx.appactions.builtintypes", atomicGroupVersion = "versions.APPACTIONS_BUILTINTYPES" }
 APPACTIONS_INTERACTION = { group = "androidx.appactions.interaction", atomicGroupVersion = "versions.APPACTIONS_INTERACTION" }
