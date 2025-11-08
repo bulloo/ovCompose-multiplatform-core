@@ -77,8 +77,9 @@ private class ArkUIInteropMutableTransaction : ArkUIInteropTransaction {
  * Class which can be used to add actions related to ArkUI objects to be executed in sync with compose rendering,
  * Addding deferred actions is threadsafe, but they will be executed in the order of their submission, and on the main thread.
  */
-class ArkUIInteropContext(
-    val requestRedraw: () -> Unit
+internal class ArkUIInteropContext(
+    val requestRedraw: () -> Unit,
+   // val interactionUIView: InteractionArkUIView
 ) {
     private val lock: OhosLock = OhosLock()
     private var transaction = ArkUIInteropMutableTransaction()
@@ -139,6 +140,6 @@ internal inline fun <T> OhosLock.doLocked(block: () -> T): T {
     }
 }
 
-val LocalArkUIInteropContext = staticCompositionLocalOf<ArkUIInteropContext> {
+internal  val LocalArkUIInteropContext = staticCompositionLocalOf<ArkUIInteropContext> {
     error("CompositionLocal ArkUIInteropContext not provided")
 }

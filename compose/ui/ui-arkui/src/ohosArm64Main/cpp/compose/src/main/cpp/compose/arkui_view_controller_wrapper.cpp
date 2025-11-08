@@ -359,6 +359,16 @@ static void bindFunction(napi_env env, napi_value object, const char *functionNa
     napi_set_named_property(env, object, functionName, functionValue);
 }
 
+static napi_value RegisterArkUIViewCreator(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    napi_value thisArg = nullptr;
+    napi_get_cb_info(env, info, &argc, args, &thisArg, nullptr);
+    OHRenderNodeManager *instance = OHRenderNodeManager::GetInstance();
+    instance -> RegisterArkUIViewCreator(env, args[0]);
+    return nullptr;
+}
+
 napi_value Wrapped(napi_env env, void *nativeController) {
     napi_value result = nullptr;
     napi_create_object(env, &result);
@@ -386,6 +396,7 @@ napi_value Wrapped(napi_env env, void *nativeController) {
     bindFunction(env, result, "notifyRedraw", NotifyRedraw);
     bindFunction(env, result, "createNativeRoot", CreateNativeRoot);
     bindFunction(env, result, "destroyNativeRoot", DestroyNativeRoot);
+    bindFunction(env, result, "registerArkUIViewCreator", RegisterArkUIViewCreator);
     return result;
 }
 } // namespace androidx::compose::ui::arkui::utils::ArkUIViewControllerWrapper

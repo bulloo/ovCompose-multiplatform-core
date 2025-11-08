@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.arkui.utils.InteropWrapNode_Handle
 
 /**
  * A special PointerInputModifier that provides access to the underlying [TouchEvent]s originally
@@ -87,6 +88,24 @@ class RequestDisallowInterceptTouchEvent : (Boolean) -> Unit {
     override fun invoke(disallowIntercept: Boolean) {
         pointerInteropFilter?.disallowIntercept = disallowIntercept
     }
+}
+
+/**
+ * Similar to the 2 argument overload of [pointerInteropFilter], but connects
+ * directly to an [AndroidViewHolder] for more seamless interop with Android.
+ */
+@ExperimentalComposeUiApi
+internal fun Modifier.pointerInteropFilterV2(wrappingView: InteropWrapNode_Handle?): Modifier {
+    val filter = PointerInteropFilter()
+
+    val requestDisallowInterceptTouchEvent = RequestDisallowInterceptTouchEvent()
+    filter.requestDisallowInterceptTouchEvent = requestDisallowInterceptTouchEvent
+
+//    filter.onTouchEvent = { touchEvent ->
+//        //view.dispatchTouchEvent(touchEvent)
+//    }
+    //view.onRequestDisallowInterceptTouchEvent = requestDisallowInterceptTouchEvent
+    return this.then(filter)
 }
 
 /**

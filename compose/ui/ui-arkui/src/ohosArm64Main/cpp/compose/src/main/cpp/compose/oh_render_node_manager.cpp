@@ -4,6 +4,9 @@
 #include <window_manager/oh_display_manager.h>
 
 void OHRenderNodeManager::DestroyNativeRoot() {
+    // Destroy touch event handler first
+    m_touchEventHandler.reset();
+    
     if (m_contentHandle && m_customNodeHandle) {
         OH_ArkUI_NodeContent_RemoveNode(m_contentHandle, m_customNodeHandle);
     }
@@ -47,6 +50,10 @@ void OHRenderNodeManager::CreateNativeRoot(napi_env env, napi_value nodeContent)
     m_renderRootNode = std::make_unique<OH::BaseRenderNode>();
     OH_ArkUI_RenderNodeUtils_AddRenderNode(m_customNodeHandle, m_renderRootNode->getHandle());
     OH_ArkUI_NodeContent_AddNode(m_contentHandle, m_customNodeHandle);
+    
+    // Register touch event handler for the custom node
+    m_touchEventHandler = std::make_unique<OH::InteropTouchEventHandler>(m_customNodeHandle);
+    
     LOGI("Create native root successfully");
 }
 
@@ -61,3 +68,26 @@ arkui_utils::OHNativeCanvasProxyFactory* OHRenderNodeManager::createNativeCanvas
     }
     return m_canvasProxyFactory.get();
 }
+
+void OHRenderNodeManager::RegisterArkUIViewCreator(napi_env env, napi_value createArkUiViewCallback) {
+    m_env = env;
+    napi_create_reference(env, createArkUiViewCallback, 1, &m_createArkUIView);
+}
+
+OH::InteropWrapView* OHRenderNodeManager::CreateMixedNode(const char* name, napi_value parameter) {
+    auto interopWrapView = std::make_unique<OH::InteropWrapView>();
+    interopWrapView->Initialize(m_env, m_createArkUIView, m_customNodeHandle);
+    auto view = interopWrapView->CreateMixedNode(name, parameter);
+//    NativeNodeApi::getInstance()->addChild(m_customNodeHandle, view);
+//
+    OH::InteropWrapView* rawPtr = interopWrapView.get();
+    m_interopWrapViews.push_back(std::move(interopWrapView));
+
+    // Set the InteropWrapView to the touch event handler for event dispatch
+    if (m_touchEventHandler) {
+        m_touchEventHandler->setInteropWrapView(rawPtr);
+    }
+
+    return rawPtr;
+}
+

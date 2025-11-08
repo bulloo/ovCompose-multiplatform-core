@@ -37,6 +37,7 @@ import androidx.compose.ui.arkui.ArkUIRootView
 import androidx.compose.ui.arkui.ArkUIView
 import androidx.compose.ui.arkui.ArkUIViewContainer
 import androidx.compose.ui.arkui.pointerInteropFilter
+import androidx.compose.ui.arkui.pointerInteropFilterV2
 import androidx.compose.ui.arkui.pointerInteropPlaceholderFilter
 import androidx.compose.ui.arkui.trackUIKitInterop
 import androidx.compose.ui.draw.drawBehind
@@ -52,13 +53,38 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.napi.JsObject
 import androidx.compose.ui.napi.js
 import androidx.compose.ui.node.ComposeUiNode
+import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.AccessibilityKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import kotlinx.atomicfu.atomic
+import kotlinx.cinterop.useContents
+import platform.ohos.ArkUI_NodeHandle
+import platform.arkui.OH_ArkUI_RenderNodeUtils_CreateNode
+import androidx.compose.ui.arkui.utils.BaseRenderNode_Handle
+import androidx.compose.ui.arkui.utils.androidx_compose_ui_arkui_utils_bind_compose_interop_container
+import androidx.compose.ui.arkui.utils.androidx_compose_ui_arkui_utils_add_child
+import androidx.compose.ui.arkui.utils.androidx_compose_ui_arkui_utils_remove_from_parent
+import androidx.compose.ui.arkui.utils.androidx_compose_ui_arkui_utils_set_frame
+import androidx.compose.ui.arkui.utils.androidx_compose_ui_arkui_utils_get_interop_render_node
+import androidx.compose.ui.arkui.utils.androidx_compose_ui_arkui_utils_create_mixed_view
+import androidx.compose.ui.arkui.utils.InteropWrapNode_Handle
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.napi.JsEnv
+import androidx.compose.ui.napi.nApiValue
+import androidx.compose.ui.platform.nativefoundation.AdaptiveCanvas
+import kotlinx.cinterop.CValue
+import kotlinx.cinterop.cstr
+import kotlinx.cinterop.objcPtr
+import kotlinx.cinterop.memScoped
 
 private val STUB_CALLBACK_WITH_RECEIVER: Any.() -> Unit = {}
 
@@ -84,6 +110,84 @@ data class AdaptiveParams(
 )
 
 enum class InteropContainer { BACK, FORE, TOUCHABLE }
+
+/**
+ * @param factory The block creating the [ArkUIView] to be composed.
+ * @param modifier The modifier to be applied to the layout. Size should be specified in modifier.
+ * Modifier may contains crop() modifier with different shapes.
+ * @param update A callback to be invoked after the layout is inflated.
+ * @param background A color of [ArkUIView] background wrapping the view created by [factory].
+ * @param onRelease A callback invoked as a signal that this view instance has exited the
+ * composition hierarchy entirely and will not be reused again. Any additional resources used by the
+ * View should be freed at this time.
+ * @param onResize May be used to custom resize logic.
+ * @param interactive If true, then user touches will be passed to this ArkUIView
+ */
+@Composable
+internal fun InternalArkUIViewV2(
+    name: String,
+    modifier: Modifier,
+    parameter: JsObject = js(),
+    update: (JsObject) -> Unit = STUB_CALLBACK_WITH_RECEIVER,
+    background: Color = Color.Unspecified,
+    updater: (ArkUIView) -> Unit = STUB_CALLBACK_WITH_RECEIVER,
+    onCreate: (ArkUIView) -> Unit = STUB_CALLBACK_WITH_RECEIVER,
+    onRelease: (ArkUIView) -> Unit = STUB_CALLBACK_WITH_RECEIVER,
+    interactive: Boolean = true,
+    adaptiveParams: AdaptiveParams? = null
+) {
+
+    val interopContext = LocalArkUIInteropContext.current
+    val embeddedInteropComponent = remember {
+        EmbeddedInteropForArkUINode(
+            name,
+            parameter,
+            onRelease = onRelease
+        )
+    }
+
+    val density = LocalDensity.current.density
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    var componentSize: IntSize by remember { mutableStateOf(IntSize.Zero) }
+    embeddedInteropComponent.setUserInteractionEnabled(interactive);
+    var layoutKey by remember { mutableStateOf(0) }
+    Place(
+        key = layoutKey,
+        measurePolicy = { _, constraints ->
+           emptyMeasureResult()
+            //embeddedInteropComponent.component?.measure(density, this, constraints) ?: emptyMeasureResult()
+        },
+        modifier = Modifier.then(modifier)
+            .nativeAccessibility(isEnabled = true, embeddedInteropComponent.wrappingView)
+            .arkUILayer { canvas ->
+                androidx_compose_ui_arkui_utils_set_frame(100F, 50F)
+            }.drawLayer { canvas ->
+                (canvas as AdaptiveCanvas).drawLayer(embeddedInteropComponent.baseView)
+            }
+    )
+
+    DisposableEffect(Unit) {
+        interopContext.deferAction(ArkUIInteropViewHierarchyChange.VIEW_ADDED) {
+            embeddedInteropComponent.addToHierarchy()
+        }
+
+        onDispose {
+            interopContext.deferAction(ArkUIInteropViewHierarchyChange.VIEW_REMOVED) {
+                embeddedInteropComponent.removeFromHierarchy()
+            }
+        }
+    }
+//
+//    LaunchedEffect(background) {
+//        interopContext.deferAction {
+//            embeddedInteropComponent.wrappingView.backgroundColor = parseColor(background)
+//        }
+//    }
+//
+//    SideEffect {
+//        embeddedInteropComponent.updater.update = update
+//    }
+}
 
 /**
  * @param factory The block creating the [ArkUIView] to be composed.
@@ -481,29 +585,51 @@ fun ArkUIView(
     adaptiveParams: AdaptiveParams? = null,
     tag: String? = null,
     container: InteropContainer = InteropContainer.BACK
-) = InternalArkUIView(
-    name = name,
-    modifier = modifier,
-    parameter = parameter,
-    update = update,
-    background = background,
-    updater = updater,
-    onCreate = onCreate,
-    onRelease = onRelease,
-    interactive = interactive,
-    adaptiveParams = adaptiveParams,
-    tag = tag,
-    container = container,
-)
+) {
+    val renderBackend = false
+    if (renderBackend) {
+        InternalArkUIView(
+            name = name,
+            modifier = modifier,
+            parameter = parameter,
+            update = update,
+            background = background,
+            updater = updater,
+            onCreate = onCreate,
+            onRelease = onRelease,
+            interactive = interactive,
+            adaptiveParams = adaptiveParams,
+            tag = tag,
+            container = container,
+        )
+    } else {
+        InternalArkUIViewV2(
+            name = name,
+            modifier = modifier,
+            parameter = parameter,
+            update = update,
+            background = background,
+            updater = updater,
+            onCreate = onCreate,
+            onRelease = onRelease,
+            interactive = interactive,
+            adaptiveParams = adaptiveParams
+        )
+    }
+}
+
+
 
 @Composable
-private fun Place(key: Int, modifier: Modifier, measurePolicy: MeasurePolicy) {
+private fun Place(key: Int,
+                  modifier: Modifier,
+                  measurePolicy: MeasurePolicy,
+                  factory: () -> ComposeUiNode = ComposeUiNode.Constructor) {
     key(key) {
-
         val compositeKeyHash = currentCompositeKeyHash
         val localMap = currentComposer.currentCompositionLocalMap
         ReusableComposeNode<ComposeUiNode, Applier<Any>>(
-            factory = ComposeUiNode.Constructor,
+            factory = factory,
             update = {
                 set(measurePolicy, ComposeUiNode.SetMeasurePolicy)
                 set(localMap, ComposeUiNode.SetResolvedCompositionLocals)
@@ -540,6 +666,46 @@ private abstract class EmbeddedInteropComponent(
         rootView.removeInteropView(container)
         updater.dispose()
         onRelease(component)
+    }
+}
+
+
+private class EmbeddedInteropForArkUINode<T : ArkUIView>(
+    name: String,
+    parameter: JsObject,
+    val onRelease: (T) -> Unit
+) {
+    var wrappingView: InteropWrapNode_Handle? = androidx_compose_ui_arkui_utils_create_mixed_view(name, parameter.jsValue)
+    var layoutNode: LayoutNode? = null
+    val baseView: BaseRenderNode_Handle = checkNotNull(wrappingView) {
+        "wrappingView is null"
+    }.let {
+        androidx_compose_ui_arkui_utils_get_interop_render_node(it)!!
+    }
+
+
+    fun bindComposeInteractionUIView(view: ArkUI_NodeHandle) {
+        androidx_compose_ui_arkui_utils_bind_compose_interop_container(wrappingView, view);
+    }
+
+    fun setFrame() {
+
+    }
+
+    fun setUserInteractionEnabled(interactive: Boolean) {
+       // androidx_compose_ui_arkui_utils_set_user_interaction_enable(wrappingView, view);
+    }
+
+    fun addToHierarchy() {
+        //androidx_compose_ui_arkui_utils_add_child(wrappingView, tempComponent);
+    }
+
+    fun removeFromHierarchy() {
+        androidx_compose_ui_arkui_utils_remove_from_parent(wrappingView);
+    }
+
+    fun refreshLayoutNode(node: LayoutNode) {
+        layoutNode = node
     }
 }
 
@@ -616,3 +782,51 @@ private fun Int.limitSizeWhenExceeds(limit: Int, target: Int?): Int =
     if (this < limit) this else (target ?: limit)
 
 fun Dp.toPx(density: Float): Int = (this.value * density).toInt()
+
+private fun emptyMeasureResult(): MeasureResult {
+    return object : MeasureResult {
+        override val width: Int
+            get() = 0
+        override val height: Int
+            get() = 0
+        override val alignmentLines: Map<AlignmentLine, Int>
+            get() = emptyMap()
+
+        override fun placeChildren() {}
+    }
+}
+
+internal val NativeAccessibilityViewSemanticsKey = AccessibilityKey<InteropWrapNode_Handle?>(
+    name = "NativeAccessibilityView",
+    mergePolicy = { parentValue, childValue ->
+        when {
+            parentValue == null -> childValue
+            childValue == null -> parentValue
+            else -> {
+                println(
+                    "Warning: Merging accessibility for multiple interop views is not supported. " +
+                            "Multiple [UIKitView] are grouped under one node that should be represented as a single accessibility element." +
+                            "It isn't recommended because the accessibility system can only recognize the first one. " +
+                            "If you need multiple native views for accessibility, make sure to place them inside a single [UIKitView]."
+                )
+                parentValue
+            }
+        }
+    }
+)
+
+private var SemanticsPropertyReceiver.nativeAccessibilityView by NativeAccessibilityViewSemanticsKey
+// TODO: align "platform" vs "native" naming
+/**
+ * Chain [this] with [Modifier.semantics] that sets the [nativeAccessibilityView] of the node to
+ * the [interopWrappingView] if [isEnabled] is true.
+ * If [isEnabled] is false, [this] is returned as is.
+ *
+ * See [UIKitView] and [UIKitViewController] accessibility argument for description of effects introduced by this semantics.
+ */
+fun Modifier.nativeAccessibility(isEnabled: Boolean, interopWrappingView: InteropWrapNode_Handle? = null) =
+    if (isEnabled) {
+        this.semantics { nativeAccessibilityView = interopWrappingView }
+    } else {
+        this
+    }

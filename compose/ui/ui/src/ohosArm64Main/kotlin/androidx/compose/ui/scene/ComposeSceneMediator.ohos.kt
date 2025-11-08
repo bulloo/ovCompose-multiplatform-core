@@ -19,6 +19,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.common.interop.LogPrintUtil
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ComposeTabService
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.InternalComposeApi
@@ -30,11 +31,13 @@ import androidx.compose.ui.arkui.RenderingBackend
 import androidx.compose.ui.arkui.TouchEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.interop.ArkUIInteropContext
+import androidx.compose.ui.interop.LocalArkUIInteropContext
 import androidx.compose.ui.napi.JsEnv
 import androidx.compose.ui.platform.LocalKeyboardAvoidFocusOffset
 import androidx.compose.ui.platform.LocalKeyboardOverlapHeight
@@ -67,6 +70,7 @@ internal class ComposeSceneMediator(
     private val configuration: ComposeArkUIViewControllerConfiguration,
     private val windowContext: PlatformWindowContext,
     private val interopContext: ArkUIInteropContext,
+    //private val renderingComponentFactory: (RenderingComponent.Delegate) -> RenderingComponent<*>,
     val coroutineContext: CoroutineContext,
     component: OHNativeXComponent,
     nativeCanvasFactory: COpaquePointer? = null,
@@ -238,6 +242,7 @@ internal class ComposeSceneMediator(
     @Composable
     private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) {
         CompositionLocalProvider(
+//            LocalArkUIInteropContext provides interopContext,
             LocalKeyboardOverlapHeight provides keyboardOverlapHeightState.value,
             LocalKeyboardAvoidFocusOffset provides keyboardAvoidFocusOffsetState.value,
             content = content

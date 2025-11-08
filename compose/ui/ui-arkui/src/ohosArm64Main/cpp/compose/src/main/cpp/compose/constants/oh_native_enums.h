@@ -8,6 +8,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    HIT_TEST_NATIVE_VIEW,
+    HIT_TEST_COMPOSE_VIEW,
+    HIT_TEST_NONE
+} HitTestViewType;
+
 typedef enum { Fill, Stroke } OH_Native_Draw_PaintingStyle;
 
 typedef enum { Empty, EvenOdd } OH_Native_Draw_PathFillType;

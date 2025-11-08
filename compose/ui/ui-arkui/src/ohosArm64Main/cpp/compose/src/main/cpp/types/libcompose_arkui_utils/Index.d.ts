@@ -62,4 +62,6 @@ export declare interface InternalArkUIViewController extends ArkUIViewController
   createNativeRoot(nodeContent: any): void
 
   destroyNativeRoot(): void
+
+  registerArkUIViewCreator(builder: (name: string, parameter: Object) => any/*ArkUIView*/): void;
 }

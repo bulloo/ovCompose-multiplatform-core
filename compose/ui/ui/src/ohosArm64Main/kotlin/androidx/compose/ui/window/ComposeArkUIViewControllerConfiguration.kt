@@ -52,4 +52,6 @@ class ComposeArkUIViewControllerConfiguration {
     var internalStopGCSuppressor: () -> Unit = {}
 
     var renderingBackend: RenderingBackend = RenderingBackend.XComponent
+
+    var canBecomeFirstResponder = false
 }

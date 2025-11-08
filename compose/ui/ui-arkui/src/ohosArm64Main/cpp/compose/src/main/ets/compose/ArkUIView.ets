@@ -23,9 +23,9 @@ import { offsetTouchEventLocalPosition, transformTouchEvent } from './TouchEvent
 
 const interopBuilderTable = new Map<string, Function>()
 
-export function registerComposeInteropBuilder(key: string, builder: Function) {
-  interopBuilderTable.set(key, builder)
-}
+// export function registerComposeInteropBuilder(key: string, builder: Function) {
+//   interopBuilderTable.set(key, builder)
+// }
 
 let globalComposeNodeId = 0
 
@@ -39,6 +39,7 @@ export class ArkUIView extends ArkUINode {
   builder: ArkUIBuilder
   builderNode: BuilderNode<Object[]>
   constraint: LayoutConstraint | null = null
+  frameNode: FrameNode | null = null
 
 
   //region Native Api
@@ -66,8 +67,9 @@ export class ArkUIView extends ArkUINode {
     const builderNode = new BuilderNode<[Holder]>(context)
     builderNode.build(builder, this)
 
-    this.appendChild(builderNode.getFrameNode())
+    //this.appendChild(builderNode.getFrameNode())
     this.builderNode = builderNode
+    this.frameNode = builderNode.getFrameNode()
   }
 
   updateArkUIParameter(parameter: Object) {

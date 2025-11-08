@@ -27,6 +27,8 @@
 #include "oh_compose_native_paint.h"
 #include "oh_native_canvas_proxy.h"
 #include "oh_native_canvas_proxy_factory.h"
+#include "../interop/oh_native_interop_wrap_node.h"
+#include "../oh_render_node_manager.h"
 
 EXTERN_C_START
 /// OHNativeCanvasProxy related methods
@@ -388,4 +390,31 @@ NativeBasicShader_Handle androidx_compose_ui_arkui_utils_createNativeImageShader
     return reinterpret_cast<NativeBasicShader_Handle>(shader);
 }
 
+void androidx_compose_ui_arkui_utils_bind_compose_interop_container(InteropWrapNode_Handle wrappingView, ArkUI_NodeHandle view) {
+    LOGI("androidx_compose_ui_arkui_utils_bind_compose_interop_container ");
+}
+
+void androidx_compose_ui_arkui_utils_add_child(InteropWrapNode_Handle wrappingView, ArkUI_NodeHandle view) {
+    LOGI("androidx_compose_ui_arkui_utils_add_child ");
+}
+
+void androidx_compose_ui_arkui_utils_remove_from_parent(InteropWrapNode_Handle wrappingView) {
+    LOGI("androidx_compose_ui_arkui_utils_remove_from_parent ");
+}
+
+void androidx_compose_ui_arkui_utils_set_frame(float width, float height) {
+    LOGI("androidx_compose_ui_arkui_utils_set_frame ");
+}
+
+BaseRenderNode_Handle androidx_compose_ui_arkui_utils_get_interop_render_node(InteropWrapNode_Handle wrappingView) {
+    auto nativeInteropWrapView = reinterpret_cast<OH::InteropWrapView *>(wrappingView);
+    auto baseRenderNode = nativeInteropWrapView->getMixedRendNode();
+    return reinterpret_cast<BaseRenderNode_Handle>(baseRenderNode);
+}
+
+InteropWrapNode_Handle androidx_compose_ui_arkui_utils_create_mixed_view(const char* name, napi_value parameter) {
+    OHRenderNodeManager *instance = OHRenderNodeManager::GetInstance();
+    auto wrapNode = instance -> CreateMixedNode(name, parameter);
+    return reinterpret_cast<InteropWrapNode_Handle>(wrapNode);
+}
 EXTERN_C_END
