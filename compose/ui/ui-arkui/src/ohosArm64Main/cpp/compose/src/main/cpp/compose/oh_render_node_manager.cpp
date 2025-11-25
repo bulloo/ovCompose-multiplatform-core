@@ -4,7 +4,19 @@
 #include <window_manager/oh_display_manager.h>
 
 void OHRenderNodeManager::DestroyNativeRoot() {
-    // Destroy touch event handler first
+    // Remove all InteropWrapViews from touch event handler before destroying
+    if (m_touchEventHandler) {
+        for (const auto& view : m_interopWrapViews) {
+            if (view != nullptr) {
+                m_touchEventHandler->removeInteropWrapView(view.get());
+            }
+        }
+    }
+    
+    // Clear all views
+    m_interopWrapViews.clear();
+    
+    // Destroy touch event handler
     m_touchEventHandler.reset();
     
     if (m_contentHandle && m_customNodeHandle) {
@@ -52,7 +64,7 @@ void OHRenderNodeManager::CreateNativeRoot(napi_env env, napi_value nodeContent)
     OH_ArkUI_NodeContent_AddNode(m_contentHandle, m_customNodeHandle);
     
     // Register touch event handler for the custom node
-    m_touchEventHandler = std::make_unique<OH::InteropTouchEventHandler>(m_customNodeHandle);
+    //m_touchEventHandler = std::make_unique<OH::InteropTouchEventHandler>(m_customNodeHandle);
     
     LOGI("Create native root successfully");
 }
@@ -78,14 +90,15 @@ OH::InteropWrapView* OHRenderNodeManager::CreateMixedNode(const char* name, napi
     auto interopWrapView = std::make_unique<OH::InteropWrapView>();
     interopWrapView->Initialize(m_env, m_createArkUIView, m_customNodeHandle);
     auto view = interopWrapView->CreateMixedNode(name, parameter);
-//    NativeNodeApi::getInstance()->addChild(m_customNodeHandle, view);
+    //NativeNodeApi::getInstance()->addChild(m_customNodeHandle, view);
 //
     OH::InteropWrapView* rawPtr = interopWrapView.get();
     m_interopWrapViews.push_back(std::move(interopWrapView));
 
-    // Set the InteropWrapView to the touch event handler for event dispatch
+    // Add the InteropWrapView to the touch event handler for event dispatch
+    // This supports multiple nodes - events will be forwarded to all registered views
     if (m_touchEventHandler) {
-        m_touchEventHandler->setInteropWrapView(rawPtr);
+        m_touchEventHandler->addInteropWrapView(rawPtr);
     }
 
     return rawPtr;

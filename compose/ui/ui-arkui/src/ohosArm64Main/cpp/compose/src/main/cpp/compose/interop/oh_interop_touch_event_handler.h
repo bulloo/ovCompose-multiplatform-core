@@ -4,6 +4,7 @@
 #include <arkui/ui_input_event.h>
 #include "../native_node_api.h"
 #include <vector>
+#include <algorithm>
 
 namespace OH {
 
@@ -34,7 +35,8 @@ public:
     virtual ~InteropTouchEventHandler() noexcept;
     
     void onTouchEvent(ArkUI_UIInputEvent* event);
-    void setInteropWrapView(InteropWrapView* view);
+    void addInteropWrapView(InteropWrapView* view);
+    void removeInteropWrapView(InteropWrapView* view);
     
 private:
     static void receiveEvent(ArkUI_NodeEvent* event);
@@ -43,7 +45,7 @@ private:
     int32_t generatedTouchPointIdentifier(ArkUI_UIInputEvent* event, uint32_t idx);
     
     ArkUI_NodeHandle m_nodeHandle;
-    InteropWrapView* m_interopWrapView;
+    std::vector<InteropWrapView*> m_interopWrapViews;  // Support multiple views
 };
 
 } // namespace OH

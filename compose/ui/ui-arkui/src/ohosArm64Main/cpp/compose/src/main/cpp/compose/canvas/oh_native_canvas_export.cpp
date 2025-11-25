@@ -417,4 +417,12 @@ InteropWrapNode_Handle androidx_compose_ui_arkui_utils_create_mixed_view(const c
     auto wrapNode = instance -> CreateMixedNode(name, parameter);
     return reinterpret_cast<InteropWrapNode_Handle>(wrapNode);
 }
+
+napi_value androidx_compose_ui_arkui_utils_get_jsArkUIView(InteropWrapNode_Handle wrappingView) {
+    if (wrappingView == nullptr) {
+        return nullptr;
+    }
+    auto nativeInteropWrapView = reinterpret_cast<OH::InteropWrapView *>(wrappingView);
+    return nativeInteropWrapView->getJsArkUIView();
+}
 EXTERN_C_END

@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputFilter
@@ -121,6 +122,27 @@ internal fun Modifier.pointerInteropFilter(view: ArkUIViewContainer): Modifier {
 
     filter.onTouchEvent = { touchEvent ->
         view.dispatchTouchEvent(touchEvent)
+    }
+    view.onRequestDisallowInterceptTouchEvent = requestDisallowInterceptTouchEvent
+    return this.then(filter)
+}
+
+/**
+ * Similar to the 2 argument overload of [pointerInteropFilter], but connects
+ * directly to an [AndroidViewHolder] for more seamless interop with Android.
+ */
+@ExperimentalComposeUiApi
+internal fun Modifier.pointerInteropFilterV2(
+    view: ArkUIViewContainer,
+    offset: Offset
+): Modifier {
+    val filter = PointerInteropFilter()
+
+    val requestDisallowInterceptTouchEvent = RequestDisallowInterceptTouchEvent()
+    filter.requestDisallowInterceptTouchEvent = requestDisallowInterceptTouchEvent
+
+    filter.onTouchEvent = { touchEvent ->
+        view.dispatchTouchEventV2(touchEvent, offset.x, offset.y)
     }
     view.onRequestDisallowInterceptTouchEvent = requestDisallowInterceptTouchEvent
     return this.then(filter)

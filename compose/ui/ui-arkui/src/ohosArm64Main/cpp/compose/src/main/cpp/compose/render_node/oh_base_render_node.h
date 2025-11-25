@@ -46,6 +46,7 @@ class BaseRenderNode {
   virtual OH_DrawingNode_Type getType();
 
   BaseRenderNode *addChild(BaseRenderNode *child) {
+    LOGI("OHRenderNode operation with addChild");
     maybeThrow(
         OH_ArkUI_RenderNodeUtils_AddChild(nodeHandle_, child->getHandle()));
     child->setParent(this);
@@ -73,16 +74,19 @@ class BaseRenderNode {
   BaseRenderNode *getParent() const { return parent_; }
 
   BaseRenderNode *setPosition(const int32_t x, const int32_t y) {
-    maybeThrow(OH_ArkUI_RenderNodeUtils_SetPosition(nodeHandle_, x, y));
+      LOGI("OHRenderNode operation with setPosition");
+      maybeThrow(OH_ArkUI_RenderNodeUtils_SetPosition(nodeHandle_, x, y));
     return this;
   }
 
   BaseRenderNode *setSize(const int32_t width, const int32_t height) {
+      LOGI("OHRenderNode operation with setSize");
     maybeThrow(OH_ArkUI_RenderNodeUtils_SetSize(nodeHandle_, width, height));
     return this;
   }
 
   BaseRenderNode *setTransform(float *matrix) {
+      LOGI("OHRenderNode operation with setTransform");
     maybeThrow(OH_ArkUI_RenderNodeUtils_SetTransform(nodeHandle_, matrix));
     return this;
   }
@@ -94,12 +98,14 @@ class BaseRenderNode {
   }
 
   BaseRenderNode *setTranslate(const float translateX, const float translateY) {
-    maybeThrow(OH_ArkUI_RenderNodeUtils_SetTranslation(nodeHandle_, translateX,
+      LOGI("OHRenderNode operation with setTranslate");
+      maybeThrow(OH_ArkUI_RenderNodeUtils_SetTranslation(nodeHandle_, translateX,
                                                        translateY));
     return this;
   }
 
   BaseRenderNode *setClip(ArkUI_RenderNodeClipOption *clipOption) {
+      LOGI("OHRenderNode operation with setClip");
     maybeThrow(OH_ArkUI_RenderNodeUtils_SetClip(nodeHandle_, clipOption));
     OH_ArkUI_RenderNodeUtils_DisposeRenderNodeClipOption(clipOption);
     return this;
@@ -130,13 +136,15 @@ class BaseRenderNode {
 
   BaseRenderNode *setBounds(const int32_t x, const int32_t y,
                             const int32_t width, const int32_t height) {
+      LOGI("OHRenderNode operation with setBounds");
     maybeThrow(
         OH_ArkUI_RenderNodeUtils_SetBounds(nodeHandle_, x, y, width, height));
     return this;
   }
 
   BaseRenderNode *setPivot(float px, float py) {
-    maybeThrow(OH_ArkUI_RenderNodeUtils_SetPivot(nodeHandle_, px, py));
+      LOGI("OHRenderNode operation with setPivot");
+      maybeThrow(OH_ArkUI_RenderNodeUtils_SetPivot(nodeHandle_, px, py));
     return this;
   }
 
@@ -185,6 +193,7 @@ class BaseRenderNode {
   }
 
   BaseRenderNode *setBackgroundColor(const uint32_t backgroundColor) {
+    LOGI("OHRenderNode operation with setBackgroundColor %{public}p", this);
     maybeThrow(OH_ArkUI_RenderNodeUtils_SetBackgroundColor(nodeHandle_,
                                                            backgroundColor));
     return this;

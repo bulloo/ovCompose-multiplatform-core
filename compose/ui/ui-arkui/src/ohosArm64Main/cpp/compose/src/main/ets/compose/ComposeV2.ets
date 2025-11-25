@@ -32,7 +32,7 @@ import { WindowStageManager } from './window/WindowStageManager';
 
 import { NodeContent } from '@ohos.arkui.node'
 import { displaySync } from '@kit.ArkGraphics2D';
-import { ArkUIViewV2 } from './ArkUIViewV2';
+import { ArkUIView } from './ArkUIView';
 
 let GeneratedIndex = 0;
 
@@ -110,9 +110,9 @@ export struct ComposeV2 {
       this.displaySync?.start();
   }
 
-  buildArkUIView(name: string, parameter: Object): ArkUIViewV2 | null {
+  buildArkUIView(name: string, parameter: Object): ArkUIView | null {
       let uiContent = AppStorage.get<UIContext>("context");
-      const arkUIView = new ArkUIViewV2(uiContent!!, name, parameter);
+      const arkUIView = new ArkUIView(uiContent!!, name, parameter);
       return arkUIView
   }
 

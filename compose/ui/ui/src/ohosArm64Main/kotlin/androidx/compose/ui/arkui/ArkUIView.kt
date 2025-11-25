@@ -194,6 +194,20 @@ class ArkUIView internal constructor(
         return false
     }
 
+    fun dispatchTouchEventV2(touchEvent: TouchEvent, offsetX: Float, offsetY: Float): Boolean {
+        if (jsArkUIViewRef != null) {
+            return jsArkUIViewRef
+                .call(
+                    "onTouchEvent",
+                    touchEvent.nativeEvent,
+                    offsetX.nApiValue(),
+                    offsetY.nApiValue()
+                )
+                .asBoolean() ?: false
+        }
+        return false
+    }
+
     fun update(parameter: JsObject) {
         if (jsArkUIViewRef != null) {
             this.parameter = parameter
@@ -249,6 +263,10 @@ class ArkUIViewContainer {
             field = value
             _arkUIView?.onRequestDisallowInterceptTouchEvent = field
         }
+
+    fun dispatchTouchEventV2(touchEvent: TouchEvent, offsetX: Float, offsetY: Float): Boolean {
+        return _arkUIView?.dispatchTouchEventV2(touchEvent, offsetX, offsetY) ?: return false
+    }
 
     fun dispatchTouchEvent(touchEvent: TouchEvent): Boolean {
         return _arkUIView?.dispatchTouchEvent(touchEvent) ?: return false

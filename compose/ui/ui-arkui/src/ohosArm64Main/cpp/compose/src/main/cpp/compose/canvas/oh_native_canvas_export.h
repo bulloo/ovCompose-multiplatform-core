@@ -41,6 +41,7 @@ void androidx_compose_ui_arkui_utils_remove_from_parent(InteropWrapNode_Handle w
 void androidx_compose_ui_arkui_utils_set_frame(float width, float height);
 BaseRenderNode_Handle androidx_compose_ui_arkui_utils_get_interop_render_node(InteropWrapNode_Handle wrappingView);
 InteropWrapNode_Handle androidx_compose_ui_arkui_utils_create_mixed_view(const char* name, napi_value parameter);
+napi_value androidx_compose_ui_arkui_utils_get_jsArkUIView(InteropWrapNode_Handle wrappingView);
 
 // OHNativeCanvasProxy state operations
 void androidx_compose_ui_arkui_utils_OHNativeCanvasProxy_save(OHNativeCanvasProxy_Handle proxy);

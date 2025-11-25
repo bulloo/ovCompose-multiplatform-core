@@ -7,29 +7,38 @@
 #include "../native_node_api.h"
 #include <arkui/native_node_napi.h>
 #include <arkui/native_render.h>
+#include <cmath>
 
 namespace OH {
     //static void* kFrameObserverContext = &kFrameObserverContext;
 
     InteropWrapView::InteropWrapView() 
         : lastFrame_({0, 0, 0, 0})
-        // , frameObserverContext_(kFrameObserverContext) 
     {
-        renderNode_->setSize(100, 100)
-        ->setBackgroundColor(0xFFFF0000);
-        //TMMComposeMarkViewForVideoReport(this);
+        renderNode_->setBackgroundColor(0xFF00FF00)
+        ->setSize(600, 500);
+        LOGI("InteropWrapView::InteropWrapView %{public}p", renderNode_.get());
     }
 
     InteropWrapView::~InteropWrapView() {
-        //removeFrameListener();
+        releaseMixedViewRef();
     }
 
-    BaseRenderNode* InteropWrapView::getBaseRenderNodePtr() {
-        return renderNode_.get();
+    void InteropWrapView::releaseMixedViewRef() {
+        if (m_mixedViewRef != nullptr && m_env != nullptr) {
+            napi_delete_reference(m_env, m_mixedViewRef);
+            m_mixedViewRef = nullptr;
+        }
     }
 
-    void setUserInteraction(bool interactionEnable) {
-
+    void InteropWrapView::setMixedViewRef(napi_value jsView) {
+        if (jsView != nullptr && m_env != nullptr) {
+            napi_status status = napi_create_reference(m_env, jsView, 1, &m_mixedViewRef);
+            if (status != napi_ok) {
+                LOGE("InteropWrapView::setMixedViewRef: Failed to create reference, status=%d", status);
+                m_mixedViewRef = nullptr;
+            }
+        }
     }
 
     ArkUI_NodeHandle InteropWrapView::CreateMixedNode(const char* name, napi_value parameter) {
@@ -42,8 +51,7 @@ namespace OH {
         napi_get_reference_value(m_env, m_createArkUIView, &createArkUIView);
 
         napi_call_function(m_env, nullptr, createArkUIView, 2, argv, &result);
-        auto view = getArkUIViewProperty(m_env, result, "frameNode");
-        OH_ArkUI_GetNodeHandleFromNapiValue(m_env, view, &m_mixedHandle);
+        OH_ArkUI_GetNodeHandleFromNapiValue(m_env, result, &m_mixedHandle);
         maybeThrow(OH_ArkUI_NativeModule_AdoptChild(m_customNodeHandle, m_mixedHandle));
         ArkUI_RenderNodeHandle mixedRenderNode = nullptr;
         maybeThrow(OH_ArkUI_RenderNodeUtils_GetRenderNode(m_mixedHandle, &mixedRenderNode));
@@ -52,6 +60,10 @@ namespace OH {
         napi_value escaped_result;
         napi_escape_handle(m_env, scope, result, &escaped_result);
         napi_close_escapable_handle_scope(m_env, scope);
+        
+        // Save reference to the JS ArkUIView object for later use in measure and getMeasuredWidth/Height
+        setMixedViewRef(escaped_result);
+        
         return m_mixedHandle;
     }
 
@@ -62,8 +74,6 @@ namespace OH {
             return renderNode_.get();
         }
     }
-
-
 
     napi_value InteropWrapView::callArkUIVIewMethod(napi_env env, napi_value object, const char* method_name,
         size_t argc, napi_value* argv) {
@@ -148,5 +158,14 @@ namespace OH {
                 }
             }
         }
+    }
+
+    napi_value InteropWrapView::getJsArkUIView() {
+        if (m_mixedViewRef == nullptr || m_env == nullptr) {
+            return nullptr;
+        }
+        napi_value jsView = nullptr;
+        napi_get_reference_value(m_env, m_mixedViewRef, &jsView);
+        return jsView;
     }
 } // namespace OH

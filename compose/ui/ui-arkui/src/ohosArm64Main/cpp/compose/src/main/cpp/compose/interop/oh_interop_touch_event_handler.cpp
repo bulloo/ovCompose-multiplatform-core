@@ -96,7 +96,7 @@ TouchEvent::TouchEvent(ArkUI_UIInputEvent* event) {
 }
 
 InteropTouchEventHandler::InteropTouchEventHandler(ArkUI_NodeHandle nodeHandle)
-    : m_nodeHandle(nodeHandle), m_interopWrapView(nullptr) {
+    : m_nodeHandle(nodeHandle) {
     if (m_nodeHandle == nullptr) {
         LOGE("InteropTouchEventHandler: nodeHandle is null");
         return;
@@ -128,8 +128,29 @@ InteropTouchEventHandler::~InteropTouchEventHandler() noexcept {
     LOGI("InteropTouchEventHandler: unregistered touch events");
 }
 
-void InteropTouchEventHandler::setInteropWrapView(InteropWrapView* view) {
-    m_interopWrapView = view;
+void InteropTouchEventHandler::addInteropWrapView(InteropWrapView* view) {
+    if (view == nullptr) {
+        return;
+    }
+    // Check if already exists to avoid duplicates
+    for (auto* existingView : m_interopWrapViews) {
+        if (existingView == view) {
+            return;  // Already added
+        }
+    }
+    m_interopWrapViews.push_back(view);
+    LOGI("InteropTouchEventHandler::addInteropWrapView: added view, total views=%zu", m_interopWrapViews.size());
+}
+
+void InteropTouchEventHandler::removeInteropWrapView(InteropWrapView* view) {
+    if (view == nullptr) {
+        return;
+    }
+    m_interopWrapViews.erase(
+        std::remove(m_interopWrapViews.begin(), m_interopWrapViews.end(), view),
+        m_interopWrapViews.end()
+    );
+    LOGI("InteropTouchEventHandler::removeInteropWrapView: removed view, remaining views=%zu", m_interopWrapViews.size());
 }
 
 void InteropTouchEventHandler::onTouchEvent(ArkUI_UIInputEvent* event) {
@@ -137,9 +158,9 @@ void InteropTouchEventHandler::onTouchEvent(ArkUI_UIInputEvent* event) {
         return;
     }
 
-    if (m_interopWrapView == nullptr) {
-        // No view to dispatch to, but we can still log
-        LOGI("InteropTouchEventHandler::onTouchEvent: no InteropWrapView set");
+    if (m_interopWrapViews.empty()) {
+        // No views to dispatch to
+        LOGI("InteropTouchEventHandler::onTouchEvent: no InteropWrapView registered");
         return;
     }
 
@@ -152,12 +173,11 @@ void InteropTouchEventHandler::onTouchEvent(ArkUI_UIInputEvent* event) {
         touchEvent.activeTouchPoints = {getActiveTouchFromUIInputEvent(event)};
     }
 
-    // Dispatch to InteropWrapView
-    if (m_interopWrapView != nullptr) {
-        m_interopWrapView->onTouchEvent(touchEvent);
-    } else {
-        LOGI("InteropTouchEventHandler::onTouchEvent: no InteropWrapView set, action=%d, touches=%zu", 
-             touchEvent.action, touchEvent.activeTouchPoints.size());
+    // Dispatch to all registered InteropWrapViews
+    for (auto* view : m_interopWrapViews) {
+        if (view != nullptr) {
+            view->onTouchEvent(touchEvent);
+        }
     }
 }
 

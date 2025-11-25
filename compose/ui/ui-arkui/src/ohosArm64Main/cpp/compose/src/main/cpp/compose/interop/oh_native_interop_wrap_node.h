@@ -26,12 +26,12 @@ namespace OH {
         InteropWrapView();
         ~InteropWrapView();
 
-        BaseRenderNode* getBaseRenderNodePtr();
         void setUserInteraction(bool interactionEnable);
         OH::BaseRenderNode* getMixedRendNode();
         void Initialize(napi_env env, napi_ref createArkUIView, ArkUI_NodeHandle customNodeHandle);
         ArkUI_NodeHandle CreateMixedNode(const char* name, napi_value parameter);
         void onTouchEvent(const struct TouchEvent& event);
+        napi_value getJsArkUIView();
 
     private:
         static void maybeThrow(const int32_t status) {
@@ -44,18 +44,17 @@ namespace OH {
         napi_value callArkUIVIewMethod(napi_env env, napi_value object, const char* method_name,
                 size_t argc, napi_value* argv);
         napi_value getArkUIViewProperty(napi_env env, napi_value object, const char* property_name);
+        void releaseMixedViewRef();
+        void setMixedViewRef(napi_value jsView);
         Rect lastFrame_;
         std::unique_ptr<OH::BaseRenderNode> renderNode_ = std::make_unique<OH::BaseRenderNode>();
         std::unique_ptr<OH::BaseRenderNode> m_mixedRenderNode = nullptr;
         napi_env m_env = nullptr;
         napi_ref m_createArkUIView = nullptr;
+        napi_ref m_mixedViewRef = nullptr;
         ArkUI_NodeHandle m_customNodeHandle = nullptr;
         ArkUI_NodeHandle m_mixedHandle = nullptr;
         bool m_shouldHandlerTouch = true;
-        // SizeChangeCallback onSizeChange_;
-        
-        // KVO 观察者标记
-       // void* frameObserverContext_;
     };
 } // namespace OH
 
